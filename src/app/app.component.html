@@ -1,0 +1,34 @@
+<div class="p-grid">
+  
+  <p-fieldset legend="Players" [toggleable]="true">
+    <div class="p-col-12" *ngFor="let playerCountOption of playerCountOptions">
+      <p-radioButton name="playerCount" value="{{ playerCountOption }}" [label]="playerCountOption + ' Players'" [(ngModel)]="selectedPlayerCount"></p-radioButton>
+    </div>
+    <br>
+    <div class="p-col-12">
+      <p-button label="Set player count" [disabled]="readyForCardPick" (onClick)="setPlayerCountButtonPressed($event)" [styleClass]="'ui-button-raised ui-button-rounded'"></p-button>
+    </div>
+  </p-fieldset>
+  <br>
+
+  <p-fieldset legend="Cards" [toggleable]="true">
+    <div class="p-col-12" *ngIf="gameState.possibleActions[0].actionName === 'chooseCards'">
+      <img *ngFor="let card of gameState.possibleActions[0].options"
+      src="/assets/img/{{ card }}.jpg"
+      pTooltip="{{ card }}"
+      tooltipPosition="bottom"
+      class="card-selection-card"
+      (click)="cardSelected(card)"
+      [ngClass]="{'deselected': excludedCards.indexOf(card) > -1, 'selected': includedCards.indexOf(card) > -1}">
+    </div>
+    <br>
+    <div class="p-col-12" *ngIf="gameState.possibleActions[0].actionName === 'chooseCards'">
+      Included cards: <b>{{ includedCards.length }}</b><br>
+      Excluded cards: <b>{{ excludedCards.length }}</b><br>
+      <p-button [disabled]="!readyForCardPick" label="Pick cards" (onClick)="cardsPickedButtonPressed($event)" [styleClass]="'ui-button-raised ui-button-rounded'"></p-button>
+    </div>
+  </p-fieldset>
+
+</div>
+
+<p-toast></p-toast>

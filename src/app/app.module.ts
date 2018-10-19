@@ -20,13 +20,35 @@ import { NoContentComponent } from './no-content';
 import { XLargeDirective } from './home/x-large';
 import { DevModuleModule } from './+dev-module';
 
+import { AccordionModule } from 'primeng/accordion';
+import { ButtonModule } from 'primeng/button';
+import { RadioButtonModule } from 'primeng/radiobutton';
+import { TooltipModule } from 'primeng/tooltip';
+import { PanelModule } from 'primeng/panel';
+import { ToastModule } from 'primeng/toast';
+import { MessageService } from 'primeng/api';
+import { FieldsetModule } from 'primeng/fieldset';
+
+import { GameService } from './services/gameService/game.service';
 import '../styles/styles.scss';
 import '../styles/headings.css';
 
 // Application wide providers
 const APP_PROVIDERS = [
   ...APP_RESOLVER_PROVIDERS,
-  AppState
+  AppState,
+  MessageService,
+  GameService,
+];
+
+const PRIMENG_MODULES = [
+  AccordionModule,
+  RadioButtonModule,
+  TooltipModule,
+  PanelModule,
+  ToastModule,
+  ButtonModule,
+  FieldsetModule,
 ];
 
 interface StoreType {
@@ -45,19 +67,20 @@ interface StoreType {
     AboutComponent,
     HomeComponent,
     NoContentComponent,
-    XLargeDirective
+    XLargeDirective,
   ],
   /**
    * Import Angular's modules.
    */
   imports: [
+    ...PRIMENG_MODULES,
     BrowserModule,
     BrowserAnimationsModule,
     FormsModule,
     HttpClientModule,
     RouterModule.forRoot(ROUTES, {
       useHash: Boolean(history.pushState) === false,
-      preloadingStrategy: PreloadAllModules
+      preloadingStrategy: PreloadAllModules,
     }),
 
     /**
@@ -72,7 +95,7 @@ interface StoreType {
    */
   providers: [
     environment.ENV_PROVIDERS,
-    APP_PROVIDERS
-  ]
+    APP_PROVIDERS,
+  ],
 })
 export class AppModule {}

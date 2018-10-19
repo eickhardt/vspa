@@ -12,18 +12,19 @@
     "node_modules/rxjs-tslint"
   ],
   "rules": {
-    "trailing-comma": [false, {"multiline": "always", "singleline": "never"}],
+    "trailing-comma": [true, {"multiline": "always", "singleline": "never"}],
     "interface-name": [false, "always-prefix"],
     "component-class-suffix": true,
     // "component-selector": [true, "element", "my", "kebab-case"],
     "directive-class-suffix": true,
     // "directive-selector": [true, "attribute", "my", "camelCase"],
+    "array-type": false,
     "import-destructuring-spacing": true,
     "no-attribute-parameter-decorator": true,
     "no-forward-ref": true,
     "no-input-rename": true,
     "no-output-rename": true,
-    "only-arrow-functions": false,
+    "only-arrow-functions": true,
     "pipe-naming": [true, "camelCase", "my"],
     "use-host-property-decorator": true,
     "use-input-property-decorator": true,
@@ -33,12 +34,14 @@
     "no-console": [true,
       "time",
       "timeEnd",
-      "trace"
+      "trace",
+      "log"
     ],
     "max-line-length": [
       true,
-      100
+      140
     ],
+    "no-empty": false,
     "no-string-literal": false,
     "no-use-before-declare": true,
     "object-literal-sort-keys": false,
