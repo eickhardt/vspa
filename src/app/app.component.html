@@ -1,33 +1,74 @@
 <div class="p-grid">
-  
-  <p-fieldset legend="Players" [toggleable]="true">
-    <div class="p-col-12" *ngFor="let playerCountOption of playerCountOptions">
-      <p-radioButton name="playerCount" value="{{ playerCountOption }}" [label]="playerCountOption + ' Players'" [(ngModel)]="selectedPlayerCount"></p-radioButton>
-    </div>
-    <br>
-    <div class="p-col-12">
-      <p-button label="Set player count" [disabled]="readyForCardPick" (onClick)="setPlayerCountButtonPressed($event)" [styleClass]="'ui-button-raised ui-button-rounded'"></p-button>
-    </div>
+  <p-fieldset legend="Game" [toggleable]="true">
+    <p-button label="Reset game" (onClick)="resetGameButtonPressed($event)" [styleClass]="'ui-button-raised ui-button-rounded'"></p-button><br>
+    Game over: <b>{{ gameState.theGameOver }}</b><br>
+    Turns played: <b>{{ gameState.turnsPlayed }}</b>
   </p-fieldset>
-  <br>
 
-  <p-fieldset legend="Cards" [toggleable]="true">
-    <div class="p-col-12" *ngIf="gameState.possibleActions[0].actionName === 'chooseCards'">
-      <img *ngFor="let card of gameState.possibleActions[0].options"
-      src="/assets/img/{{ card }}.jpg"
-      pTooltip="{{ card }}"
-      tooltipPosition="bottom"
-      class="card-selection-card"
-      (click)="cardSelected(card)"
-      [ngClass]="{'deselected': excludedCards.indexOf(card) > -1, 'selected': includedCards.indexOf(card) > -1}">
-    </div>
-    <br>
-    <div class="p-col-12" *ngIf="gameState.possibleActions[0].actionName === 'chooseCards'">
-      Included cards: <b>{{ includedCards.length }}</b><br>
-      Excluded cards: <b>{{ excludedCards.length }}</b><br>
-      <p-button [disabled]="!readyForCardPick" label="Pick cards" (onClick)="cardsPickedButtonPressed($event)" [styleClass]="'ui-button-raised ui-button-rounded'"></p-button>
-    </div>
-  </p-fieldset>
+  <span *ngIf="gameState">
+
+    <p-fieldset *ngIf="isActionAvailable('startGame')" legend="Players" [toggleable]="true">
+      <div class="p-col-12" *ngFor="let playerCountOption of playerCountOptions">
+        <p-radioButton name="playerCount" value="{{ playerCountOption }}" [label]="playerCountOption + ' Players'" [(ngModel)]="selectedPlayerCount"></p-radioButton>
+      </div>
+      <br>
+      <div class="p-col-12">
+        <card-image *ngFor="let card of gameState.possibleActions[0].options"
+        (click)="gameCardSelected(card)"
+        [cardName]="card"
+        [tooltip]="card"
+        [deselected]="excludedCards.indexOf(card) > -1"
+        [selected]="includedCards.indexOf(card) > -1"></card-image>
+      </div>
+      <br>
+      <div class="p-col-12">
+        Included: <b>{{ includedCards.length }}</b><br>
+        Excluded: <b>{{ excludedCards.length }}</b><br>
+        <br>
+        <p-button label="Start game" (onClick)="startGameButtonPressed($event)" [styleClass]="'ui-button-raised ui-button-rounded'"></p-button>
+      </div>
+    </p-fieldset>
+    
+    <p-fieldset *ngIf="gameState && gameState.gameMeta.supplyPiles" legend="Cards available for purchase" [toggleable]="true">
+      <div class="p-col-12">
+        <span *ngFor="let supplyPile of gameState.gameMeta.supplyPiles">
+
+          <card-image *ngIf="supplyPile.dominionCard.cardCategory.indexOf('Common') > -1"
+           [tooltip]="supplyPile.dominionCard.name + ' (' + supplyPile.number + ') | ' + supplyPile.dominionCard.price + ' gold'"
+           [cardName]="supplyPile.dominionCard.name"
+           [selected]="supplyPile === selectedSupplyPile"
+           [disabled]="currentPlayer.moneyAvailable < supplyPile.dominionCard.price || !currentPlayer.buys"
+           (click)="selectedSupplyPile = supplyPile"></card-image>
+        </span>
+        <br>
+        <span *ngFor="let supplyPile of gameState.gameMeta.supplyPiles">
+          <card-image *ngIf="supplyPile.dominionCard.cardCategory.indexOf('Common') === -1"
+           [tooltip]="supplyPile.dominionCard.name + ' (' + supplyPile.number + ') | ' + supplyPile.dominionCard.price + ' gold'"
+           [cardName]="supplyPile.dominionCard.name"
+           [selected]="supplyPile === selectedSupplyPile"
+           [disabled]="currentPlayer.moneyAvailable < supplyPile.dominionCard.price || !currentPlayer.buys"
+           (click)="selectedSupplyPile = supplyPile"></card-image>
+        </span>
+      </div>
+    </p-fieldset>
+    
+    <p-fieldset *ngIf="currentPlayer" legend="Hand of {{ currentPlayer.name }}" [toggleable]="true">
+      <div class="p-col-12">
+        Gold in hand: <b>{{ currentPlayer.money }}</b> | 
+        Gold total: <b>{{ currentPlayer.moneyAvailable }}</b> |
+        Buys: <b>{{ currentPlayer.buys }}</b> |
+        Actions: <b>{{ currentPlayer.actions }}</b>
+      </div>
+      <div class="p-col-12">
+        <card-image *ngFor="let card of currentPlayer.hand" [cardName]="card.name" (click)="currentPlayerHandCardSelected(card.name)"></card-image>
+      </div>
+      <div class="p-col-12">
+        <p-button label="Buy card" [disabled]="!selectedSupplyPile || !isActionAvailable('buyCard') || !currentPlayer.buys" (onClick)="buyCardButtonPressed($event)" [styleClass]="'ui-button-raised ui-button-rounded'"></p-button>
+        <p-button label="End turn" (onClick)="endTurnButtonPressed($event)" [styleClass]="'ui-button-raised ui-button-rounded ui-button-success'"></p-button>
+      </div>
+    </p-fieldset>
+  
+  </span>
 
 </div>
 

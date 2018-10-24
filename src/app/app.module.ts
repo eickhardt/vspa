@@ -14,11 +14,6 @@ import { ROUTES } from './app.routes';
 import { AppComponent } from './app.component';
 import { APP_RESOLVER_PROVIDERS } from './app.resolver';
 import { AppState, InternalStateType } from './app.service';
-import { HomeComponent } from './home';
-import { AboutComponent } from './about';
-import { NoContentComponent } from './no-content';
-import { XLargeDirective } from './home/x-large';
-import { DevModuleModule } from './+dev-module';
 
 import { AccordionModule } from 'primeng/accordion';
 import { ButtonModule } from 'primeng/button';
@@ -29,6 +24,7 @@ import { ToastModule } from 'primeng/toast';
 import { MessageService } from 'primeng/api';
 import { FieldsetModule } from 'primeng/fieldset';
 
+import { CardImageComponent } from './components/card-image.component';
 import { GameService } from './services/gameService/game.service';
 import '../styles/styles.scss';
 import '../styles/headings.css';
@@ -51,6 +47,10 @@ const PRIMENG_MODULES = [
   FieldsetModule,
 ];
 
+const COMPONENTS = [
+  CardImageComponent,
+];
+
 interface StoreType {
   state: InternalStateType;
   restoreInputValues: () => void;
@@ -64,10 +64,7 @@ interface StoreType {
   bootstrap: [ AppComponent ],
   declarations: [
     AppComponent,
-    AboutComponent,
-    HomeComponent,
-    NoContentComponent,
-    XLargeDirective,
+    ...COMPONENTS,
   ],
   /**
    * Import Angular's modules.
@@ -88,7 +85,7 @@ interface StoreType {
      * When the module is not imported it will get tree shaked.
      * This is a simple example, a big app should probably implement some logic
      */
-    ...environment.showDevModule ? [ DevModuleModule ] : [],
+    // ...environment.showDevModule ? [ DevModuleModule ] : [],
   ],
   /**
    * Expose our Services and Providers into Angular's dependency injection.

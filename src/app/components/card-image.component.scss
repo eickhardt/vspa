@@ -1,0 +1,14 @@
+.card-image {
+  height: 150px;
+  border: 2px solid gray;
+  &.selected {
+    border: 2px solid #007ddd;
+  }
+  &.deselected {
+    border: 2px solid #be0918;
+  }
+  &.disabled {
+    -webkit-filter: grayscale(100%);
+    filter: grayscale(100%);
+  }
+}

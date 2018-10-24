@@ -1,10 +1,12 @@
-import { Component, OnInit, ViewEncapsulation, OnDestroy } from '@angular/core';
-import { environment } from 'environments/environment';
+import { Component, OnInit, ViewEncapsulation } from '@angular/core';
 import { AppState } from './app.service';
 import { GameService } from './services/gameService/game.service';
 import { GameState } from './models/interfaces/gameState';
 import { Subscription } from 'rxjs';
 import { MessageService } from 'primeng/api';
+import { ActionDTO } from './models/dtos/actionDto';
+import { PlayerDTO } from './models/dtos/playerDto';
+import { SupplyPileDTO } from './models/dtos/supplyPileDto';
 
 export const ROOT_SELECTOR = 'app';
 
@@ -21,9 +23,9 @@ export const ROOT_SELECTOR = 'app';
   styleUrls: ['./app.component.css'],
   templateUrl: './app.component.html',
 })
-export class AppComponent implements OnInit, OnDestroy {
+export class AppComponent implements OnInit {
+
   public name: string = 'Dominion Learning';
-  public showDevModule: boolean = environment.showDevModule;
 
   /**
    * If true we are ready to allow the user to pick which cards to use for the game.
@@ -42,6 +44,15 @@ export class AppComponent implements OnInit, OnDestroy {
    * @memberof AppComponent
    */
   protected mainGameSubscription: Subscription;
+
+  /**
+   * The currently selected supply pile.
+   *
+   * @protected
+   * @type {SupplyPileDTO}
+   * @memberof AppComponent
+   */
+  protected selectedSupplyPile: SupplyPileDTO;
 
   /**
    * Allowed player counts.
@@ -71,7 +82,7 @@ export class AppComponent implements OnInit, OnDestroy {
   protected includedCards: Array<string> = new Array<string>();
 
   /**
-   * Holds the cards that EXCLUDED from the game.
+   * Holds the cards that are EXCLUDED from the game.
    *
    * @protected
    * @type {Array<string>}
@@ -90,7 +101,7 @@ export class AppComponent implements OnInit, OnDestroy {
 
   constructor(
     protected appState: AppState,
-    private messageService: MessageService,
+    protected messageService: MessageService,
     protected gameService: GameService,
   ) { }
 
@@ -100,18 +111,16 @@ export class AppComponent implements OnInit, OnDestroy {
    * @memberof AppComponent
    */
   public ngOnInit(): void {
-    this.mainGameSubscription = this.gameService.gameState$.subscribe((gameState: GameState) => {
+
+    // Subscribe for game state updates
+    this.gameService.gameState$.subscribe((gameState: GameState) => {
       this.gameState = gameState;
     });
-  }
 
-  /**
-   * ngOnDestroy implementation. Unsubscribes.
-   *
-   * @memberof AppComponent
-   */
-  public ngOnDestroy(): void {
-    this.mainGameSubscription.unsubscribe();
+    // Subscribe for messages to be displayed
+    // this.gameService.message$.subscribe((gameState: GameState) => {
+    //   this.messageService.add({ severity: 'success', summary: 'Player count set', detail: 'Now choose cards to play with :)' });
+    // });
   }
 
   /**
@@ -120,24 +129,53 @@ export class AppComponent implements OnInit, OnDestroy {
    * @param {Event} e
    * @memberof AppComponent
    */
-  public setPlayerCountButtonPressed(e: Event): void {
-    this.gameService.setPlayerCount(this.selectedPlayerCount).then(() => {
-      this.messageService.add({ severity: 'success', summary: 'Player count set', detail: 'Now choose cards to play with :)' });
-      this.readyForCardPick = true;
-    });
+  public startGameButtonPressed(e: Event): void {
+    this.gameService.startGame(this.selectedPlayerCount, this.includedCards, this.excludedCards);
   }
 
   /**
-   * Tell the game service which cards we want to play with.
+   * Ask the game server to reset the game.
    *
    * @param {Event} e
    * @memberof AppComponent
    */
-  public cardsPickedButtonPressed(e: Event): void {
-    this.gameService.pickCardsForCurrentGame(this.includedCards, this.excludedCards).then(() => {
-      this.messageService.add({ severity: 'success', summary: 'Cards picked', detail: 'We\'re all set :)' });
-      this.readyForCardPick = true;
-    });
+  public resetGameButtonPressed(e: Event): void {
+    this.gameService.resetGame();
+  }
+
+  /**
+   * End the turn of the current player.
+   *
+   * @param {Event} e
+   * @memberof AppComponent
+   */
+  public endTurnButtonPressed(e: Event): void {
+    this.selectedSupplyPile = undefined;
+    this.gameService.endCurrentTurn();
+  }
+
+  /**
+   * Buy the selected card if the player can afford it.
+   *
+   * @param {Event} e
+   * @memberof AppComponent
+   */
+  public buyCardButtonPressed(e: Event): void {
+    if (this.canBuySelectedCard()) {
+      this.gameService.buyCard(this.selectedSupplyPile.dominionCard.name);
+    }
+  }
+
+  /**
+   * Check if the given action is currently available.
+   *
+   * @protected
+   * @returns {boolean}
+   * @memberof AppComponent
+   */
+  protected isActionAvailable(actionName: string): boolean {
+    const action: ActionDTO | undefined = this.gameState.possibleActions.find((obj: ActionDTO) => obj.actionName === actionName);
+    return action ? true : false;
   }
 
   /**
@@ -147,7 +185,7 @@ export class AppComponent implements OnInit, OnDestroy {
    * @param {string} card
    * @memberof AppComponent
    */
-  protected cardSelected(card: string): void {
+  protected gameCardSelected(card: string): void {
     const includedIndex: number = this.includedCards.indexOf(card);
     const excludedIndex: number = this.excludedCards.indexOf(card);
     if (excludedIndex > -1) {
@@ -161,6 +199,36 @@ export class AppComponent implements OnInit, OnDestroy {
       } else {
         this.excludedCards.push(card);
       }
+    }
+  }
+
+  /**
+   * Check if the current payer can buy the card they have selected from the supply piles.
+   *
+   * @protected
+   * @returns {boolean}
+   * @memberof AppComponent
+   */
+  protected canBuySelectedCard(): boolean {
+    if (!this.selectedSupplyPile) {
+      return false;
+    }
+
+    return this.selectedSupplyPile.dominionCard.price <= this.currentPlayer.moneyAvailable;
+  }
+
+  /**
+   * Helper method for cleaner code. Provides access to the current player dto object.
+   *
+   * @protected
+   * @returns {PlayerDTO}
+   * @memberof AppComponent
+   */
+  protected get currentPlayer(): PlayerDTO | undefined {
+    if (this.gameState && this.gameState.players.length) {
+      return this.gameState.players[this.gameState.gameMeta.currentPlayerId];
+    } else {
+      return undefined;
     }
   }
 }

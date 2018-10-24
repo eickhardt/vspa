@@ -1,7 +1,6 @@
 import { Injectable } from '@angular/core';
-import { Subscription, BehaviorSubject } from 'rxjs';
-import { DominionCardDTO } from 'app/models/dtos/dominionCardDto';
-import { HttpClient, HttpParams } from '@angular/common/http';
+import { Subscription, Subject } from 'rxjs';
+import { HttpClient } from '@angular/common/http';
 import { GameState } from 'app/models/interfaces/gameState';
 
 /**
@@ -13,74 +12,122 @@ import { GameState } from 'app/models/interfaces/gameState';
 @Injectable()
 export class GameService {
 
-  protected _isInitialized: boolean = false;
-
+  // Main API address and endpoints
   protected _apiUrl: string = 'http://188.166.163.170:8080/gnd-server-0.0.1-SNAPSHOT/api/game';
+  protected _startGame: string = '/startGame';
+  protected _resetGameUrl: string = '/reset';
+  protected _endCurrentTurnUrl: string = '/endTurn';
+  protected _buyCardUrl: string = '/buyCard';
+  protected _playActionUrl: string = '/playAction';
 
-  protected _chooseNbOfPlayersUrl: string = '/chooseNbOfPlayers';
-  protected _chooseCardsUrl: string = '/chooseCards';
+  protected _gameState$: Subject<GameState> = new Subject<GameState>();
 
-  protected _mainGameSubscription: Subscription;
-
-  protected _gameState$: BehaviorSubject<GameState | undefined> = new BehaviorSubject<GameState | undefined>(undefined);
+  protected _isInitialized: boolean = false;
 
   constructor(
     protected _http: HttpClient,
   ) { }
 
   /**
-   * Supposed to tell how the game is going - TODO: Subscription not currently working.
+   * Get the current game state.
    *
-   * @readonly
-   * @type {(BehaviorSubject<GameState | undefined>)}
+   * @returns {Promise<GameState>}
    * @memberof GameService
    */
-  public get gameState$(): BehaviorSubject<GameState | undefined> {
-    this.init();
+  public getGameState(): void {
+    this._http.get<GameState>(this._apiUrl).toPromise()
+      .then((gameState: GameState) => this.emitGameState(gameState));
+  }
+
+  /**
+   * Supposed to tell how the game is going.
+   *
+   * @readonly
+   * @type {(Subject<GameState>)}
+   * @memberof GameService
+   */
+  public get gameState$(): Subject<GameState> {
+    this.getGameState();
     return this._gameState$;
   }
 
   /**
-   * Initiate this service if it isn't already - TODO: Subscription not currently working.
-   *
-   * @memberof GameService
-   */
-  public init(): void {
-    if (!this._isInitialized) {
-      this._mainGameSubscription = this._http.get(this._apiUrl).subscribe((result: GameState) => {
-        this._gameState$.next(result);
-      });
-      this._isInitialized = true;
-    }
-  }
-
-  /**
-   * Choose number of players.
+   * Choose number of players and set of cards to play with. This action starts the game.
    *
    * @param {string} nbOfPlayers
+   * @param {Array<string>} include
+   * @param {Array<string>} exclude
    * @memberof GameService
    */
-  public setPlayerCount(nbOfPlayers: string): Promise<GameState> {
-    return this._http.get<GameState>(this._apiUrl + this._chooseNbOfPlayersUrl, {
+  public startGame(nbOfPlayers: string, include: Array<string>, exclude: Array<string>): void {
+    this._http.get<GameState>(this._apiUrl + this._startGame, {
       params: {
         nbOfPlayers,
+        include: include.join(),
+        exclude: exclude.join(),
       },
-    }).toPromise();
+    }).toPromise().then((gameState: GameState) => this.emitGameState(gameState));
   }
 
   /**
-   * Choose cards to play with.
+   * Send cardsChoose cards to play with.
    *
    * @param {Array<string>} include
    * @param {Array<string>} exclude
    * @memberof GameService
    */
-  public pickCardsForCurrentGame(include: Array<string>, exclude: Array<string>): Promise<GameState> {
-    return this._http.get<GameState>(this._apiUrl + this._chooseCardsUrl, {
-      params: {
-        include: include.join(),
-        exclude: exclude.join(),
-      },
-    }).toPromise();
+  // public pickCardsForCurrentGame(include: Array<string>, exclude: Array<string>): void {
+  //   this._http.get<GameState>(this._apiUrl + this._chooseCardsUrl, {
+  //     params: {
+  //       include: include.join(),
+  //       exclude: exclude.join(),
+  //     },
+  //   }).toPromise().then((gameState: GameState) => this.emitGameState(gameState));
+  // }
+
+  /**
+   * Ask the game server to reset the game. TODO: Confirmation
+   *
+   * @returns {void}
+   * @memberof GameService
+   */
+  public resetGame(): void {
+    this._http.get<GameState>(this._apiUrl + this._resetGameUrl).toPromise()
+      .then((gameState: GameState) => this.emitGameState(gameState));
+  }
+
+  /**
+   * Ask the game server to end the current turn.
+   *
+   * @returns {void}
+   * @memberof GameService
+   */
+  public endCurrentTurn(): void {
+    this._http.get<GameState>(this._apiUrl + this._endCurrentTurnUrl).toPromise()
+      .then((gameState: GameState) => this.emitGameState(gameState));
+  }
+
+  /**
+   * Ask gameserver to buy the given card for the currently active player.
+   *
+   * @returns {void}
+   * @memberof GameService
+   */
+  public buyCard(cardName: string): void {
+    this._http.get<GameState>(this._apiUrl + this._buyCardUrl, {
+      params: { cardName },
+    }).toPromise().then((gameState: GameState) => this.emitGameState(gameState));
+  }
+
+  /**
+   * Emit the given game state.
+   *
+   * @protected
+   * @param {GameState} gameState
+   * @memberof GameService
+   */
+  protected emitGameState(gameState: GameState): void {
+    console.log('Emitting game state: ', gameState);
+    this._gameState$.next(gameState);
   }
 }

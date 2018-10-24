@@ -21,14 +21,3 @@ nav a {
   text-decoration: none;
   border-radius: 4px;
 }
-
-.card-selection-card {
-  height: 150px;
-  border: 2px solid gray;
-  &.selected {
-    border: 2px solid #007ddd;
-  }
-  &.deselected {
-    border: 2px solid #be0918;
-  }
-}
