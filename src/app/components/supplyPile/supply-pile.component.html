@@ -1,0 +1,7 @@
+<span>
+  <card-image [tooltip]="pile.dominionCard.name + ' (' + pile.number + ') <br> ' + pile.dominionCard.price + ' gold'"
+    [cardName]="pile.dominionCard.name"
+    [selected]="selected"
+    [disabled]="currentPlayer.moneyAvailable < pile.dominionCard.price || !currentPlayer.buys">
+  </card-image>
+</span>

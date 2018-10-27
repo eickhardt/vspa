@@ -24,7 +24,8 @@ import { ToastModule } from 'primeng/toast';
 import { MessageService } from 'primeng/api';
 import { FieldsetModule } from 'primeng/fieldset';
 
-import { CardImageComponent } from './components/card-image.component';
+import { CardImageComponent } from './components/card/card-image.component';
+import { SupplyPileComponent } from './components/supplyPile/supply-pile.component';
 import { GameService } from './services/gameService/game.service';
 import '../styles/styles.scss';
 import '../styles/headings.css';
@@ -49,6 +50,7 @@ const PRIMENG_MODULES = [
 
 const COMPONENTS = [
   CardImageComponent,
+  SupplyPileComponent,
 ];
 
 interface StoreType {

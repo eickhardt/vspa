@@ -7,6 +7,10 @@ import { MessageService } from 'primeng/api';
 import { ActionDTO } from './models/dtos/actionDto';
 import { PlayerDTO } from './models/dtos/playerDto';
 import { SupplyPileDTO } from './models/dtos/supplyPileDto';
+import { TurnState } from './models/enums/turnState';
+import { DominionCardDTO } from './models/dtos/dominionCardDto';
+import { CardUtil } from './util/cardUtil';
+import { CardCategory } from './models/enums/cardCategory';
 
 export const ROOT_SELECTOR = 'app';
 
@@ -20,84 +24,24 @@ export const ROOT_SELECTOR = 'app';
 @Component({
   selector: ROOT_SELECTOR,
   encapsulation: ViewEncapsulation.None,
-  styleUrls: ['./app.component.css'],
+  styleUrls: ['./app.component.scss'],
   templateUrl: './app.component.html',
 })
 export class AppComponent implements OnInit {
 
   public name: string = 'Dominion Learning';
 
-  /**
-   * If true we are ready to allow the user to pick which cards to use for the game.
-   *
-   * @protected
-   * @type {boolean}
-   * @memberof AppComponent
-   */
-  protected readyForCardPick: boolean = false;
-
-  /**
-   * The subscription that will provide the game state.
-   *
-   * @protected
-   * @type {Subscription}
-   * @memberof AppComponent
-   */
-  protected mainGameSubscription: Subscription;
-
-  /**
-   * The currently selected supply pile.
-   *
-   * @protected
-   * @type {SupplyPileDTO}
-   * @memberof AppComponent
-   */
-  protected selectedSupplyPile: SupplyPileDTO;
-
-  /**
-   * Allowed player counts.
-   *
-   * @protected
-   * @type {Array<string>}
-   * @memberof AppComponent
-   */
-  protected playerCountOptions: Array<string> = ['2', '3', '4'];
-
-  /**
-   * The currently selected number of players in the game.
-   *
-   * @protected
-   * @type {number}
-   * @memberof AppComponent
-   */
-  protected selectedPlayerCount: string = '2';
-
-  /**
-   * Holds the cards that are INCLUDED in the game. Max 10 cards!
-   *
-   * @protected
-   * @type {Array<string>}
-   * @memberof AppComponent
-   */
-  protected includedCards: Array<string> = new Array<string>();
-
-  /**
-   * Holds the cards that are EXCLUDED from the game.
-   *
-   * @protected
-   * @type {Array<string>}
-   * @memberof AppComponent
-   */
-  protected excludedCards: Array<string> = new Array<string>();
-
-  /**
-   * Holds the current state of the game as received from the API. TODO: Make subscription work!
-   *
-   * @protected
-   * @type {GameState}
-   * @memberof AppComponent
-   */
+  protected turnStates = TurnState;
+  protected turnState: TurnState = TurnState.Action;
+  protected gameSubscription: Subscription;
   protected gameState: GameState;
+  protected cachedCurrentPlayer: number;
+  protected selectedSupplyPile: SupplyPileDTO;
+  protected selectedCardInHand: DominionCardDTO;
+  protected playerCountOptions: Array<string> = ['2', '3', '4'];
+  protected selectedPlayerCount: string = '2';
+  protected includedCards: Array<string> = new Array<string>();
+  protected excludedCards: Array<string> = new Array<string>();
 
   constructor(
     protected appState: AppState,
@@ -106,21 +50,20 @@ export class AppComponent implements OnInit {
   ) { }
 
   /**
-   * ngOnInit implementation. Initializes the game service. TODO: Make subscription work!
+   * ngOnInit implementation. Subscribes to the game service.
    *
    * @memberof AppComponent
    */
   public ngOnInit(): void {
-
-    // Subscribe for game state updates
     this.gameService.gameState$.subscribe((gameState: GameState) => {
       this.gameState = gameState;
-    });
 
-    // Subscribe for messages to be displayed
-    // this.gameService.message$.subscribe((gameState: GameState) => {
-    //   this.messageService.add({ severity: 'success', summary: 'Player count set', detail: 'Now choose cards to play with :)' });
-    // });
+      // If a new player has gotten the turn, reset selections
+      if (this.cachedCurrentPlayer !== this.gameState.gameMeta.currentPlayerId) {
+        this.resetSelections();
+        this.cachedCurrentPlayer = this.gameState.gameMeta.currentPlayerId;
+      }
+    });
   }
 
   /**
@@ -129,18 +72,32 @@ export class AppComponent implements OnInit {
    * @param {Event} e
    * @memberof AppComponent
    */
-  public startGameButtonPressed(e: Event): void {
+  protected startGameButtonPressed(e: Event): void {
     this.gameService.startGame(this.selectedPlayerCount, this.includedCards, this.excludedCards);
   }
 
   /**
-   * Ask the game server to reset the game.
+   * Ask the game server to reset the game. Also resets any selections made.
    *
    * @param {Event} e
    * @memberof AppComponent
    */
-  public resetGameButtonPressed(e: Event): void {
+  protected resetGameButtonPressed(e: Event): void {
+    this.resetSelections();
     this.gameService.resetGame();
+  }
+
+  /**
+   * Resets any selections made.
+   *
+   * @protected
+   * @memberof AppComponent
+   */
+  protected resetSelections(): void {
+    this.selectedCardInHand = undefined;
+    this.selectedSupplyPile = undefined;
+    this.selectedPlayerCount = '2';
+    this.turnState = TurnState.Action;
   }
 
   /**
@@ -149,21 +106,30 @@ export class AppComponent implements OnInit {
    * @param {Event} e
    * @memberof AppComponent
    */
-  public endTurnButtonPressed(e: Event): void {
+  protected endTurnButtonPressed(e: Event): void {
     this.selectedSupplyPile = undefined;
     this.gameService.endCurrentTurn();
   }
 
   /**
-   * Buy the selected card if the player can afford it.
+   * Buy the currently selected card if the player can afford it.
    *
-   * @param {Event} e
    * @memberof AppComponent
    */
-  public buyCardButtonPressed(e: Event): void {
+  protected buyCard(): void {
     if (this.canBuySelectedCard()) {
       this.gameService.buyCard(this.selectedSupplyPile.dominionCard.name);
     }
+  }
+
+  /**
+   * Ask game server to play the currently selected card in hand.
+   *
+   * @protected
+   * @memberof AppComponent
+   */
+  protected playSelectedCardFromHand(): void {
+    this.gameService.playCard(this.selectedCardInHand.name);
   }
 
   /**
@@ -230,5 +196,78 @@ export class AppComponent implements OnInit {
     } else {
       return undefined;
     }
+  }
+
+  /**
+   * Get the supply piles that are treasures.
+   *
+   * @readonly
+   * @protected
+   * @type {Array<SupplyPileDTO>}
+   * @memberof AppComponent
+   */
+  protected get treasureSupplies(): Array<SupplyPileDTO> {
+    return CardUtil.filterSupplyPilesByCategories(this.gameState.gameMeta.supplyPiles, [CardCategory.Treasure])
+      .sort((pileA: SupplyPileDTO, pileB: SupplyPileDTO) => CardUtil.sortCardsByPrice(pileA.dominionCard, pileB.dominionCard));
+  }
+
+  /**
+   * Get the supply piles that are victory points.
+   *
+   * @readonly
+   * @protected
+   * @type {Array<SupplyPileDTO>}
+   * @memberof AppComponent
+   */
+  protected get victorySupplies(): Array<SupplyPileDTO> {
+    return CardUtil.filterSupplyPilesByCategories(this.gameState.gameMeta.supplyPiles, [CardCategory.Victory])
+      .sort((pileA: SupplyPileDTO, pileB: SupplyPileDTO) => CardUtil.sortCardsByPrice(pileA.dominionCard, pileB.dominionCard));
+  }
+
+  /**
+   * Get the game specific supplies.
+   *
+   * @readonly
+   * @protected
+   * @type {Array<SupplyPileDTO>}
+   * @memberof AppComponent
+   */
+  protected get gameSupplies(): Array<SupplyPileDTO> {
+    return CardUtil.filterSupplyPilesByCategories(this.gameState.gameMeta.supplyPiles, [CardCategory.Victory, CardCategory.Treasure], true)
+      .sort((pileA: SupplyPileDTO, pileB: SupplyPileDTO) => CardUtil.sortCardsByPrice(pileA.dominionCard, pileB.dominionCard));
+  }
+
+  /**
+   * When the player presses a supply pile, check if they have pressed it twice and attempt to buy the card if in buy mode.
+   *
+   * @protected
+   * @param {SupplyPileDTO} pile
+   * @memberof AppComponent
+   */
+  protected supplyPileSelected(pile: SupplyPileDTO): void {
+    if (this.selectedSupplyPile === pile) {
+      // Second click
+      if (this.turnState === TurnState.Buy) {
+        this.buyCard();
+      }
+    }
+    this.selectedSupplyPile = pile;
+  }
+
+  /**
+   * When the player presses a card in hand, check if they have pressed it twice and attempt to play it if it's an action.
+   *
+   * @protected
+   * @param {DominionCardDTO} card
+   * @memberof AppComponent
+   */
+  protected cardSelectedInHand(card: DominionCardDTO): void {
+    if (this.selectedCardInHand === card) {
+      // Second click
+      if (this.turnState === TurnState.Action && CardUtil.cardIsAction(card) && this.currentPlayer.actions) {
+        this.playSelectedCardFromHand();
+      }
+    }
+    this.selectedCardInHand = card;
   }
 }

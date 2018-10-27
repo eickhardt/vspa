@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { Subscription, Subject } from 'rxjs';
+import { Subject } from 'rxjs';
 import { HttpClient } from '@angular/common/http';
 import { GameState } from 'app/models/interfaces/gameState';
 
@@ -18,7 +18,7 @@ export class GameService {
   protected _resetGameUrl: string = '/reset';
   protected _endCurrentTurnUrl: string = '/endTurn';
   protected _buyCardUrl: string = '/buyCard';
-  protected _playActionUrl: string = '/playAction';
+  protected _playCardUrl: string = '/playCard';
 
   protected _gameState$: Subject<GameState> = new Subject<GameState>();
 
@@ -70,22 +70,6 @@ export class GameService {
   }
 
   /**
-   * Send cardsChoose cards to play with.
-   *
-   * @param {Array<string>} include
-   * @param {Array<string>} exclude
-   * @memberof GameService
-   */
-  // public pickCardsForCurrentGame(include: Array<string>, exclude: Array<string>): void {
-  //   this._http.get<GameState>(this._apiUrl + this._chooseCardsUrl, {
-  //     params: {
-  //       include: include.join(),
-  //       exclude: exclude.join(),
-  //     },
-  //   }).toPromise().then((gameState: GameState) => this.emitGameState(gameState));
-  // }
-
-  /**
    * Ask the game server to reset the game. TODO: Confirmation
    *
    * @returns {void}
@@ -115,6 +99,19 @@ export class GameService {
    */
   public buyCard(cardName: string): void {
     this._http.get<GameState>(this._apiUrl + this._buyCardUrl, {
+      params: { cardName },
+    }).toPromise().then((gameState: GameState) => this.emitGameState(gameState));
+  }
+
+  /**
+   * Ask the game server to play the give action card.
+   *
+   * @public
+   * @param {string} cardName
+   * @memberof GameService
+   */
+  public playCard(cardName: string): void {
+    this._http.get<GameState>(this._apiUrl + this._playCardUrl, {
       params: { cardName },
     }).toPromise().then((gameState: GameState) => this.emitGameState(gameState));
   }

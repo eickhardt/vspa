@@ -1,0 +1,14 @@
+<div class="card-image-container">
+  <div [ngStyle]="{'background-image': 'url(/assets/img/' + cardName + '.jpg)'}"
+    pTooltip="{{ tooltip }}" 
+    [escape]="false"
+    tooltipPosition="right"
+    class="card-image hvr-grow"
+    [ngClass]="{'disabled': disabled, 'selected': selected, 'deselected': deselected}">
+    <div *ngIf="countNumber"
+     class="count-number"
+     [ngClass]="{ 'two-digit': countNumber > 9 && countNumber <= 99, 'three-digit': countNumber > 99 }">
+      {{ countNumber }}
+    </div>
+  </div>
+</div>

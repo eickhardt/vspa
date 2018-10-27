@@ -1,3 +1,5 @@
+import { CardCategory } from '../enums/cardCategory';
+
 /**
  * Represents a single Dominion card.
  *
@@ -8,5 +10,5 @@ export interface DominionCardDTO {
   name: string;
   points: number;
   price: number;
-  cardCategory: Array<string>;
+  cardCategory: Array<CardCategory>;
 }
