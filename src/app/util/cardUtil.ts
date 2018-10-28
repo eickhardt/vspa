@@ -13,7 +13,7 @@ export class CardUtil {
    * @memberof CardUtil
    */
   public static cardIsAction(card: DominionCardDTO): boolean {
-    return card.cardCategory.indexOf(CardCategory.Action) > -1;
+    return CardUtil.cardHasCategory(card, CardCategory.Action);
   }
 
   /**
@@ -55,12 +55,44 @@ export class CardUtil {
     return piles.filter((pile: SupplyPileDTO) => {
       let includePile: boolean = excludeMatched;
       categories.forEach((category: CardCategory) => {
-        if (pile.dominionCard.cardCategory.indexOf(category) > -1) {
+        if (CardUtil.cardHasCategory(pile.card, category)) {
           includePile = !excludeMatched;
         }
       });
 
       return includePile;
     });
+  }
+
+  /**
+   * Check if the given array of cards has at least one card that has the given category.
+   *
+   * @static
+   * @param {Array<DominionCardDTO>} pile
+   * @param {CardCategory} category
+   * @returns {boolean}
+   * @memberof CardUtil
+   */
+  public static pileContainsCardWithCategory(pile: Array<DominionCardDTO>, category: CardCategory): boolean {
+    for (const card of pile) {
+      if (CardUtil.cardHasCategory(card, category)) {
+        return true;
+      }
+    }
+
+    return false;
+  }
+
+  /**
+   * Determine if the given card has the given category.
+   *
+   * @static
+   * @param {DominionCardDTO} card
+   * @param {CardCategory} category
+   * @returns {boolean}
+   * @memberof CardUtil
+   */
+  public static cardHasCategory(card: DominionCardDTO, category: CardCategory): boolean {
+    return card.categories.indexOf(category) > -1;
   }
 }

@@ -24,6 +24,8 @@ import { ToastModule } from 'primeng/toast';
 import { MessageService } from 'primeng/api';
 import { FieldsetModule } from 'primeng/fieldset';
 
+import { NgxChartsModule } from '@swimlane/ngx-charts';
+
 import { CardImageComponent } from './components/card/card-image.component';
 import { SupplyPileComponent } from './components/supplyPile/supply-pile.component';
 import { GameService } from './services/gameService/game.service';
@@ -46,6 +48,7 @@ const PRIMENG_MODULES = [
   ToastModule,
   ButtonModule,
   FieldsetModule,
+  NgxChartsModule,
 ];
 
 const COMPONENTS = [

@@ -1,4 +1,4 @@
-import { Component, OnInit, ViewEncapsulation } from '@angular/core';
+import { Component, OnInit, ViewEncapsulation, ElementRef } from '@angular/core';
 import { AppState } from './app.service';
 import { GameService } from './services/gameService/game.service';
 import { GameState } from './models/interfaces/gameState';
@@ -11,6 +11,8 @@ import { TurnState } from './models/enums/turnState';
 import { DominionCardDTO } from './models/dtos/dominionCardDto';
 import { CardUtil } from './util/cardUtil';
 import { CardCategory } from './models/enums/cardCategory';
+
+import { trigger, state, style, transition, animate, keyframes } from '@angular/animations';
 
 export const ROOT_SELECTOR = 'app';
 
@@ -26,10 +28,147 @@ export const ROOT_SELECTOR = 'app';
   encapsulation: ViewEncapsulation.None,
   styleUrls: ['./app.component.scss'],
   templateUrl: './app.component.html',
+  animations: [
+    trigger('startGameTrigger', [
+      transition(
+        ':enter', [
+          style({ transform: 'translateX(100%)', opacity: 0 }),
+          animate('300ms', style({ transform: 'translateX(0)', opacity: 1 })),
+        ],
+      ),
+      transition(
+        ':leave', [
+          style({ transform: 'translateX(0)', opacity: 1 }),
+          animate('300ms', style({ transform: 'translateX(100%)', opacity: 0 })),
+        ],
+      ),
+    ]),
+    trigger('flyInOutTrigger', [
+      transition(
+        ':enter', [
+          style({ transform: 'translateY(100%)', opacity: 0 }),
+          animate('300ms', style({ transform: 'translateY(0)', opacity: 1 })),
+        ],
+      ),
+      transition(
+        ':leave', [
+          style({ transform: 'translateY(0)', opacity: 1 }),
+          animate('300ms', style({ transform: 'translateY(100%)', opacity: 0 })),
+        ],
+      ),
+    ]),
+  ],
 })
 export class AppComponent implements OnInit {
 
   public name: string = 'Dominion Learning';
+
+  protected chart: any = {
+    // single: [
+    //   {
+    //     name: 'Germany',
+    //     value: 8940000,
+    //   },
+    //   {
+    //     name: 'USA',
+    //     value: 5000000,
+    //   },
+    //   {
+    //     name: 'France',
+    //     value: 7200000
+    //   },
+    // ],
+
+    multi: [
+      {
+        name: 'Player 1',
+        series: [
+          {
+            name: '1',
+            value: 3,
+          },
+          {
+            name: '2',
+            value: 3,
+          },
+          {
+            name: '3',
+            value: 4,
+          },
+        ],
+      },
+      {
+        name: 'Player 2',
+        series: [
+          {
+            name: '1',
+            value: 3,
+          },
+          {
+            name: '2',
+            value: 4,
+          },
+          {
+            name: '3',
+            value: 5,
+          },
+        ],
+      },
+      {
+        name: 'Player 3',
+        series: [
+          {
+            name: '1',
+            value: 3,
+          },
+          {
+            name: '2',
+            value: 6,
+          },
+          {
+            name: '3',
+            value: 7,
+          },
+        ],
+      },
+      {
+        name: 'Player 4',
+        series: [
+          {
+            name: '1',
+            value: 3,
+          },
+          {
+            name: '2',
+            value: 3,
+          },
+          {
+            name: '3',
+            value: 3,
+          },
+        ],
+      },
+    ],
+
+    view: [] = [700, 400],
+
+    // options
+    showXAxis: true,
+    showYAxis: true,
+    gradient: false,
+    showLegend: true,
+    showXAxisLabel: true,
+    xAxisLabel: 'Round',
+    showYAxisLabel: true,
+    yAxisLabel: 'Victory points',
+
+    colorScheme: {
+      domain: ['#5AA454', '#A10A28', '#C7B42C', '#AAAAAA'],
+    },
+
+    // line, area
+    autoScale: true,
+  };
 
   protected turnStates = TurnState;
   protected turnState: TurnState = TurnState.Action;
@@ -42,6 +181,7 @@ export class AppComponent implements OnInit {
   protected selectedPlayerCount: string = '2';
   protected includedCards: Array<string> = new Array<string>();
   protected excludedCards: Array<string> = new Array<string>();
+  // protected startGameAnimationIsFinished: boolean = false;
 
   constructor(
     protected appState: AppState,
@@ -65,6 +205,23 @@ export class AppComponent implements OnInit {
       }
     });
   }
+
+  // protected startGameAnimationFinished(e: Event): void {
+  //   console.log(e);
+  //   this.startGameAnimationIsFinished = true;
+  // }
+
+  /**
+   * Check if the game is started. Is false until animations have played out as well.
+   *
+   * @readonly
+   * @protected
+   * @type {boolean}
+   * @memberof AppComponent
+   */
+  // protected get gameIsStarted(): boolean {
+  //   // return this.gameState && this.startGameAnimationIsFinished;
+  // }
 
   /**
    * Starts the game with the currently selected player count and selected / deselected cards.
@@ -94,10 +251,33 @@ export class AppComponent implements OnInit {
    * @memberof AppComponent
    */
   protected resetSelections(): void {
+    // this.startGameAnimationIsFinished = false;
     this.selectedCardInHand = undefined;
     this.selectedSupplyPile = undefined;
     this.selectedPlayerCount = '2';
     this.turnState = TurnState.Action;
+    this.excludedCards = [];
+    this.includedCards = [];
+    this.setTurnState();
+  }
+
+  /**
+   * Set default turn state.
+   *
+   * If action count is 0 and or no action cards are in th current players hand, automatically switch to buy mode.
+   *
+   * @protected
+   * @memberof AppComponent
+   */
+  protected setTurnState(): void {
+    if (this.currentPlayer) {
+      if (this.currentPlayer.actions === 0 ||
+        CardUtil.pileContainsCardWithCategory(this.currentPlayer.hand, CardCategory.Action) === false) {
+        this.turnState = TurnState.Buy;
+      } else {
+        this.turnState = TurnState.Action;
+      }
+    }
   }
 
   /**
@@ -118,7 +298,7 @@ export class AppComponent implements OnInit {
    */
   protected buyCard(): void {
     if (this.canBuySelectedCard()) {
-      this.gameService.buyCard(this.selectedSupplyPile.dominionCard.name);
+      this.gameService.buyCard(this.selectedSupplyPile.card.name);
     }
   }
 
@@ -140,8 +320,12 @@ export class AppComponent implements OnInit {
    * @memberof AppComponent
    */
   protected isActionAvailable(actionName: string): boolean {
-    const action: ActionDTO | undefined = this.gameState.possibleActions.find((obj: ActionDTO) => obj.actionName === actionName);
-    return action ? true : false;
+    if (this.gameState) {
+      const action: ActionDTO | undefined = this.gameState.possibleActions.find((obj: ActionDTO) => obj.actionName === actionName);
+      return action ? true : false;
+    }
+
+    return false;
   }
 
   /**
@@ -180,7 +364,7 @@ export class AppComponent implements OnInit {
       return false;
     }
 
-    return this.selectedSupplyPile.dominionCard.price <= this.currentPlayer.moneyAvailable;
+    return this.selectedSupplyPile.card.price <= this.currentPlayer.moneyAvailable;
   }
 
   /**
@@ -208,7 +392,7 @@ export class AppComponent implements OnInit {
    */
   protected get treasureSupplies(): Array<SupplyPileDTO> {
     return CardUtil.filterSupplyPilesByCategories(this.gameState.gameMeta.supplyPiles, [CardCategory.Treasure])
-      .sort((pileA: SupplyPileDTO, pileB: SupplyPileDTO) => CardUtil.sortCardsByPrice(pileA.dominionCard, pileB.dominionCard));
+      .sort((pileA: SupplyPileDTO, pileB: SupplyPileDTO) => CardUtil.sortCardsByPrice(pileA.card, pileB.card));
   }
 
   /**
@@ -221,7 +405,7 @@ export class AppComponent implements OnInit {
    */
   protected get victorySupplies(): Array<SupplyPileDTO> {
     return CardUtil.filterSupplyPilesByCategories(this.gameState.gameMeta.supplyPiles, [CardCategory.Victory])
-      .sort((pileA: SupplyPileDTO, pileB: SupplyPileDTO) => CardUtil.sortCardsByPrice(pileA.dominionCard, pileB.dominionCard));
+      .sort((pileA: SupplyPileDTO, pileB: SupplyPileDTO) => CardUtil.sortCardsByPrice(pileA.card, pileB.card));
   }
 
   /**
@@ -234,7 +418,7 @@ export class AppComponent implements OnInit {
    */
   protected get gameSupplies(): Array<SupplyPileDTO> {
     return CardUtil.filterSupplyPilesByCategories(this.gameState.gameMeta.supplyPiles, [CardCategory.Victory, CardCategory.Treasure], true)
-      .sort((pileA: SupplyPileDTO, pileB: SupplyPileDTO) => CardUtil.sortCardsByPrice(pileA.dominionCard, pileB.dominionCard));
+      .sort((pileA: SupplyPileDTO, pileB: SupplyPileDTO) => CardUtil.sortCardsByPrice(pileA.card, pileB.card));
   }
 
   /**
@@ -269,5 +453,9 @@ export class AppComponent implements OnInit {
       }
     }
     this.selectedCardInHand = card;
+  }
+
+  protected animateCardMovement(fromElement: ElementRef, toElement: ElementRef, card: DominionCardDTO): void {
+    
   }
 }
