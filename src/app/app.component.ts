@@ -1,9 +1,13 @@
 import { Component, OnInit, ViewEncapsulation, ElementRef } from '@angular/core';
-import { AppState } from './app.service';
+import { trigger, state, style, transition, animate, keyframes } from '@angular/animations';
+
+import { Subscription } from 'rxjs';
+
+import { ConfirmationService } from 'primeng/api';
+import { MessageService, MenuItem } from 'primeng/api';
+
 import { GameService } from './services/gameService/game.service';
 import { GameState } from './models/interfaces/gameState';
-import { Subscription } from 'rxjs';
-import { MessageService } from 'primeng/api';
 import { ActionDTO } from './models/dtos/actionDto';
 import { PlayerDTO } from './models/dtos/playerDto';
 import { SupplyPileDTO } from './models/dtos/supplyPileDto';
@@ -11,8 +15,6 @@ import { TurnState } from './models/enums/turnState';
 import { DominionCardDTO } from './models/dtos/dominionCardDto';
 import { CardUtil } from './util/cardUtil';
 import { CardCategory } from './models/enums/cardCategory';
-
-import { trigger, state, style, transition, animate, keyframes } from '@angular/animations';
 
 export const ROOT_SELECTOR = 'app';
 
@@ -32,28 +34,28 @@ export const ROOT_SELECTOR = 'app';
     trigger('startGameTrigger', [
       transition(
         ':enter', [
-          style({ transform: 'translateX(100%)', opacity: 0 }),
-          animate('300ms', style({ transform: 'translateX(0)', opacity: 1 })),
+          style({ transform: 'translateX(100%)', opacity: 0, height: 0 }),
+          animate('2500ms', style({ transform: 'translateX(0)', opacity: 1, height: '*' })),
         ],
       ),
       transition(
         ':leave', [
-          style({ transform: 'translateX(0)', opacity: 1 }),
-          animate('300ms', style({ transform: 'translateX(100%)', opacity: 0 })),
+          style({ transform: 'translateX(0)', opacity: 1, height: '*' }),
+          animate('2500ms', style({ transform: 'translateX(-100%)', opacity: 0, height: 0 })),
         ],
       ),
     ]),
     trigger('flyInOutTrigger', [
       transition(
         ':enter', [
-          style({ transform: 'translateY(100%)', opacity: 0 }),
-          animate('300ms', style({ transform: 'translateY(0)', opacity: 1 })),
+          style({ transform: 'translateX(100%)', opacity: 0, height: 0 }),
+          animate('2500ms', style({ transform: 'translateX(0)', opacity: 1, height: '*' })),
         ],
       ),
       transition(
         ':leave', [
-          style({ transform: 'translateY(0)', opacity: 1 }),
-          animate('300ms', style({ transform: 'translateY(100%)', opacity: 0 })),
+          style({ transform: 'translateX(0)', opacity: 1, height: '*' }),
+          animate('2500ms', style({ transform: 'translateX(100%)', opacity: 0, height: 0 })),
         ],
       ),
     ]),
@@ -64,92 +66,6 @@ export class AppComponent implements OnInit {
   public name: string = 'Dominion Learning';
 
   protected chart: any = {
-    // single: [
-    //   {
-    //     name: 'Germany',
-    //     value: 8940000,
-    //   },
-    //   {
-    //     name: 'USA',
-    //     value: 5000000,
-    //   },
-    //   {
-    //     name: 'France',
-    //     value: 7200000
-    //   },
-    // ],
-
-    multi: [
-      {
-        name: 'Player 1',
-        series: [
-          {
-            name: '1',
-            value: 3,
-          },
-          {
-            name: '2',
-            value: 3,
-          },
-          {
-            name: '3',
-            value: 4,
-          },
-        ],
-      },
-      {
-        name: 'Player 2',
-        series: [
-          {
-            name: '1',
-            value: 3,
-          },
-          {
-            name: '2',
-            value: 4,
-          },
-          {
-            name: '3',
-            value: 5,
-          },
-        ],
-      },
-      {
-        name: 'Player 3',
-        series: [
-          {
-            name: '1',
-            value: 3,
-          },
-          {
-            name: '2',
-            value: 6,
-          },
-          {
-            name: '3',
-            value: 7,
-          },
-        ],
-      },
-      {
-        name: 'Player 4',
-        series: [
-          {
-            name: '1',
-            value: 3,
-          },
-          {
-            name: '2',
-            value: 3,
-          },
-          {
-            name: '3',
-            value: 3,
-          },
-        ],
-      },
-    ],
-
     view: [] = [700, 400],
 
     // options
@@ -158,9 +74,9 @@ export class AppComponent implements OnInit {
     gradient: false,
     showLegend: true,
     showXAxisLabel: true,
-    xAxisLabel: 'Round',
+    xAxisLabel: 'Rounds',
     showYAxisLabel: true,
-    yAxisLabel: 'Victory points',
+    yAxisLabel: 'Rounds',
 
     colorScheme: {
       domain: ['#5AA454', '#A10A28', '#C7B42C', '#AAAAAA'],
@@ -181,11 +97,13 @@ export class AppComponent implements OnInit {
   protected selectedPlayerCount: string = '2';
   protected includedCards: Array<string> = new Array<string>();
   protected excludedCards: Array<string> = new Array<string>();
-  // protected startGameAnimationIsFinished: boolean = false;
+  protected startGameAnimationIsFinished: boolean = false;
+  protected menuItems: Array<MenuItem> = new Array<MenuItem>();
+  protected displayStatistics: boolean = false;
 
   constructor(
-    protected appState: AppState,
     protected messageService: MessageService,
+    protected confirmationService: ConfirmationService,
     protected gameService: GameService,
   ) { }
 
@@ -204,12 +122,31 @@ export class AppComponent implements OnInit {
         this.cachedCurrentPlayer = this.gameState.gameMeta.currentPlayerId;
       }
     });
+
+    // Menu items
+    this.menuItems = [
+      {
+        label: 'New game',
+        icon: 'pi pi-fw pi-star',
+        command: (event?: any) => this.newGameButtonPressed(event),
+      },
+      {
+        label: 'Statistics',
+        icon: 'pi pi-fw pi-chart-bar',
+        command: (event?: any) => this.menuItemStatisticsPressed(event),
+      },
+    ];
   }
 
-  // protected startGameAnimationFinished(e: Event): void {
-  //   console.log(e);
-  //   this.startGameAnimationIsFinished = true;
-  // }
+  protected menuItemStatisticsPressed(e: Event): void {
+    console.log('menuItemStatisticsPressed');
+    this.displayStatistics = true;
+  }
+
+  protected startGameAnimationFinished(e: Event): void {
+    console.log('startGameAnimationFinished');
+    this.startGameAnimationIsFinished = true;
+  }
 
   /**
    * Check if the game is started. Is false until animations have played out as well.
@@ -219,9 +156,9 @@ export class AppComponent implements OnInit {
    * @type {boolean}
    * @memberof AppComponent
    */
-  // protected get gameIsStarted(): boolean {
-  //   // return this.gameState && this.startGameAnimationIsFinished;
-  // }
+  protected get gameIsStarted(): boolean {
+    return this.currentPlayer && this.startGameAnimationIsFinished;
+  }
 
   /**
    * Starts the game with the currently selected player count and selected / deselected cards.
@@ -239,9 +176,14 @@ export class AppComponent implements OnInit {
    * @param {Event} e
    * @memberof AppComponent
    */
-  protected resetGameButtonPressed(e: Event): void {
-    this.resetSelections();
-    this.gameService.resetGame();
+  protected newGameButtonPressed(e: Event): void {
+    this.confirmationService.confirm({
+      message: 'Are you sure that you want to start a new game?',
+      accept: () => {
+        this.resetSelections();
+        this.gameService.resetGame();
+      },
+    });
   }
 
   /**

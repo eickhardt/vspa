@@ -21,8 +21,11 @@ import { RadioButtonModule } from 'primeng/radiobutton';
 import { TooltipModule } from 'primeng/tooltip';
 import { PanelModule } from 'primeng/panel';
 import { ToastModule } from 'primeng/toast';
-import { MessageService } from 'primeng/api';
+import { MessageService, ConfirmationService } from 'primeng/api';
 import { FieldsetModule } from 'primeng/fieldset';
+import { MenubarModule } from 'primeng/menubar';
+import { ConfirmDialogModule } from 'primeng/confirmdialog';
+import { DialogModule } from 'primeng/dialog';
 
 import { NgxChartsModule } from '@swimlane/ngx-charts';
 
@@ -37,6 +40,7 @@ const APP_PROVIDERS = [
   ...APP_RESOLVER_PROVIDERS,
   AppState,
   MessageService,
+  ConfirmationService,
   GameService,
 ];
 
@@ -48,6 +52,9 @@ const PRIMENG_MODULES = [
   ToastModule,
   ButtonModule,
   FieldsetModule,
+  MenubarModule,
+  ConfirmDialogModule,
+  DialogModule,
   NgxChartsModule,
 ];
 

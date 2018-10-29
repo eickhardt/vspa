@@ -1,26 +1,50 @@
-<!-- Game Metadata -->
+<!-- Menu -->
+<div class="p-grid">
+  <div class="p-col-12">
+    <p-menubar [model]="menuItems">
+      <ul *ngIf="gameState" class="ui-menubar-root-list">
+        <li class="ui-menuitem">
+          <a class="ui-menuitem-link">
+            <span class="ui-menuitem-text">
+              <span class="ui-menuitem-icon pi pi-fw pi-users"></span>
+              Player count: <b>{{ gameState.players.length }}</b>
+            </span>
+          </a>
+        </li>
+        <li class="ui-menuitem">
+          <a class="ui-menuitem-link">
+            <span class="ui-menuitem-text">
+              <span class="ui-menuitem-icon pi pi-fw pi-power-off"></span>
+              Game over: <b>{{ gamestate && gameState.theGameOver ? 'Yes' : 'No' }}</b>
+            </span>
+          </a>
+        </li>
+        <li class="ui-menuitem">
+          <a class="ui-menuitem-link">
+            <span class="ui-menuitem-text">
+              <span class="ui-menuitem-icon pi pi-fw pi-star-o"></span>
+              Winning player: <b>{{ gamestate && gamestate.winningPlayer !== -1 ? gameState.players[gamestate.winningPlayer].name : 'None' }}</b>
+            </span>
+          </a>
+        </li>
+        <li class="ui-menuitem">
+          <a class="ui-menuitem-link">
+            <span class="ui-menuitem-text">
+              <span class="ui-menuitem-icon pi pi-fw pi-caret-right"></span>
+              Turns played: <b>{{ gamestate ? gameState.gameMeta.turnsPlayed : '0' }}</b>
+            </span>
+          </a>
+        </li>
+      </ul>
+    </p-menubar>
+  </div>
+</div>
+<br>
+<!-- eo Menu -->
+
+<!-- Game settings - Pick player count and cards to play with -->
 <div class="p-grid" *ngIf="gameState">
-  <p-fieldset legend="Game metadata" [toggleable]="true" [collapsed]="currentPlayer" class="p-col-6" [ngClass]="{'p-col-12': gameIsStarted}">
-    <br>
-    Player count: <b>{{ gameState.players.length }}</b> | 
-    Game over: <b>{{ gamestate && gameState.theGameOver ? 'Yes' : 'No' }}</b> | 
-    Winning player: <b>{{ gamestate && gamestate.winningPlayer !== -1 ? gameState.players[gamestate.winningPlayer].name : 'None' }}</b> | 
-    Turns played: <b>{{ gamestate ? gameState.gameMeta.turnsPlayed : '0' }}</b>
-    <br><br>
-    <p-button label="Reset game" icon="pi pi-power-off" (onClick)="resetGameButtonPressed($event)" [styleClass]="'ui-button-raised ui-button-danger'"></p-button>
-    <br><br>
-    <div class="p-grid">
-      <div id="statistics-container" class="p-col-12">
-        <ngx-charts-line-chart [view]="chart.view" [scheme]="chart.colorScheme" [results]="chart.multi" [gradient]="chart.gradient"
-          [xAxis]="chart.showXAxis" [yAxis]="chart.showYAxis" [legend]="chart.showLegend" [showXAxisLabel]="chart.showXAxisLabel"
-          [showYAxisLabel]="chart.showYAxisLabel" [xAxisLabel]="chart.xAxisLabel" [yAxisLabel]="chart.yAxisLabel"
-          [autoScale]="chart.autoScale" (select)="onSelect($event)">
-        </ngx-charts-line-chart>
-      </div>
-    </div>
-  </p-fieldset>
-  <!-- Pick player count and cards to play with -->
-  <p-fieldset *ngIf="isActionAvailable('startGame')" @startGameTrigger legend="Game settings" [toggleable]="true" class="p-col-6 play-area">
+  <p-fieldset *ngIf="isActionAvailable('startGame')" @startGameTrigger (@startGameTrigger.done)="startGameAnimationFinished()" legend="Game settings" [toggleable]="true" class="p-col-12 play-area">
     <span *ngFor="let playerCountOption of playerCountOptions">
       <p-radioButton name="playerCount" value="{{ playerCountOption }}" [label]="playerCountOption + ' Players'"
         [(ngModel)]="selectedPlayerCount"></p-radioButton>
@@ -33,14 +57,13 @@
     Included: <b>{{ includedCards.length }}</b><br>
     Excluded: <b>{{ excludedCards.length }}</b><br>
     <br>
-    <p-button label="Start game" (onClick)="startGameButtonPressed($event)" [styleClass]="'ui-button-raised'"></p-button>
+    <p-button icon="pi pi-check" label="Start game" (onClick)="startGameButtonPressed($event)" [styleClass]="'ui-button-raised ui-button-success'"></p-button>
     <br><br>
   </p-fieldset>
-  <!-- eo Pick player count and cards to play with -->
 </div>
-<!-- eo Game Metadata -->
+<!-- eo Game settings - Pick player count and cards to play with -->
 
-<div *ngIf="currentPlayer" @flyInOutTrigger>
+<div *ngIf="gameIsStarted" @flyInOutTrigger>
   <div class="p-grid">
     
     <!-- Cards available for purchase -->
@@ -139,9 +162,26 @@
       </p-button>
     </p-fieldset>
     <!-- eo Current player hand and deck -->
-
-    
   </div>
 </div>
 
+<p-dialog header="Statistics" [(visible)]="displayStatistics" class>
+  <div class="p-grid" *ngIf="gameState && gameState.graphs.length">
+    <div *ngFor="let graph of gameState.graphs" class="statistics-container" class="p-col-6">
+      <ngx-charts-line-chart [view]="chart.view" [scheme]="chart.colorScheme" [results]="graph.graphEntries" [gradient]="chart.gradient"
+      [xAxis]="chart.showXAxis" [yAxis]="chart.showYAxis" [legend]="chart.showLegend" [showXAxisLabel]="chart.showXAxisLabel"
+      [showYAxisLabel]="chart.showYAxisLabel" [xAxisLabel]="chart.xAxisLabel" [yAxisLabel]="graph.name" [autoScale]="chart.autoScale"
+      (select)="onSelect($event)">
+      </ngx-charts-line-chart>
+    </div>
+  </div>
+  <div class="p-grid" *ngIf="!gameState || !gameState.graphs.length">
+    <div class="p-col-12">
+      No stats currently available. Start a game and play a round first.
+    </div>
+  </div>
+</p-dialog>
+
 <p-toast></p-toast>
+
+<p-confirmDialog header="Confirmation" icon="fa fa-question-circle" width="425"></p-confirmDialog>

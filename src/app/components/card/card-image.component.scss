@@ -11,7 +11,7 @@
     height: 150px;
     border: 2px solid gray;
     margin-right: -30px;
-    transition: margin .3s, transform .2s;
+    transition: margin .25s, transform .25s;
     &.selected {
       border: 2px solid #007ddd;
     }
@@ -24,7 +24,7 @@
     }
     &:hover, &:focus, &:active {
       z-index: 1;
-      margin: 0px 22px 0px 0px;
+      margin: 0px 0px 0px 0px;
       -webkit-transform: scale(1.5);
       transform: scale(1.5);
     }
