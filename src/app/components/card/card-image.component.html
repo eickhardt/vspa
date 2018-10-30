@@ -1,10 +1,12 @@
 <div class="card-image-container">
   <div [ngStyle]="{'background-image': 'url(/assets/img/' + cardName + '.jpg)'}"
+    (mouseenter)="cardStateService.cardMouseEnter(cardName)"
+    (mouseleave)="cardStateService.cardMouseLeave(cardName)"
     pTooltip="{{ tooltip }}" 
     [escape]="false"
     tooltipPosition="right"
-    class="card-image hvr-grow"
-    [ngClass]="{'disabled': disabled, 'selected': selected, 'deselected': deselected}">
+    class="card-image"
+    [ngClass]="{'disabled': disabled, 'selected': selected, 'deselected': deselected, 'detailed': detailed, 'interact-grow': grow}">
     <div *ngIf="countNumber"
      class="count-number"
      [ngClass]="{ 'two-digit': countNumber > 9 && countNumber <= 99, 'three-digit': countNumber > 99 }">

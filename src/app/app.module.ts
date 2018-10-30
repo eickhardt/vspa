@@ -26,12 +26,17 @@ import { FieldsetModule } from 'primeng/fieldset';
 import { MenubarModule } from 'primeng/menubar';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { DialogModule } from 'primeng/dialog';
+import { OverlayPanelModule } from 'primeng/overlaypanel';
 
 import { NgxChartsModule } from '@swimlane/ngx-charts';
 
 import { CardImageComponent } from './components/card/card-image.component';
 import { SupplyPileComponent } from './components/supplyPile/supply-pile.component';
+import { ChartComponent } from './components/chart/chart.component';
+
 import { GameService } from './services/gameService/game.service';
+import { CardStateService } from './services/cardStateService/cardStateService';
+
 import '../styles/styles.scss';
 import '../styles/headings.css';
 
@@ -42,6 +47,7 @@ const APP_PROVIDERS = [
   MessageService,
   ConfirmationService,
   GameService,
+  CardStateService,
 ];
 
 const PRIMENG_MODULES = [
@@ -56,11 +62,13 @@ const PRIMENG_MODULES = [
   ConfirmDialogModule,
   DialogModule,
   NgxChartsModule,
+  OverlayPanelModule,
 ];
 
 const COMPONENTS = [
   CardImageComponent,
   SupplyPileComponent,
+  ChartComponent,
 ];
 
 interface StoreType {

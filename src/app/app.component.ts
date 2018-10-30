@@ -1,5 +1,4 @@
-import { Component, OnInit, ViewEncapsulation, ElementRef } from '@angular/core';
-import { trigger, state, style, transition, animate, keyframes } from '@angular/animations';
+import { Component, OnInit, ViewEncapsulation, ElementRef, ViewChild } from '@angular/core';
 
 import { Subscription } from 'rxjs';
 
@@ -15,6 +14,9 @@ import { TurnState } from './models/enums/turnState';
 import { DominionCardDTO } from './models/dtos/dominionCardDto';
 import { CardUtil } from './util/cardUtil';
 import { CardCategory } from './models/enums/cardCategory';
+import { FlyInOutTrigger } from './animations/flyInOutTrigger';
+import { CardStateService } from './services/cardStateService/cardStateService';
+import { OverlayPanel } from 'primeng/overlaypanel';
 
 export const ROOT_SELECTOR = 'app';
 
@@ -31,60 +33,12 @@ export const ROOT_SELECTOR = 'app';
   styleUrls: ['./app.component.scss'],
   templateUrl: './app.component.html',
   animations: [
-    trigger('startGameTrigger', [
-      transition(
-        ':enter', [
-          style({ transform: 'translateX(100%)', opacity: 0, height: 0 }),
-          animate('2500ms', style({ transform: 'translateX(0)', opacity: 1, height: '*' })),
-        ],
-      ),
-      transition(
-        ':leave', [
-          style({ transform: 'translateX(0)', opacity: 1, height: '*' }),
-          animate('2500ms', style({ transform: 'translateX(-100%)', opacity: 0, height: 0 })),
-        ],
-      ),
-    ]),
-    trigger('flyInOutTrigger', [
-      transition(
-        ':enter', [
-          style({ transform: 'translateX(100%)', opacity: 0, height: 0 }),
-          animate('2500ms', style({ transform: 'translateX(0)', opacity: 1, height: '*' })),
-        ],
-      ),
-      transition(
-        ':leave', [
-          style({ transform: 'translateX(0)', opacity: 1, height: '*' }),
-          animate('2500ms', style({ transform: 'translateX(100%)', opacity: 0, height: 0 })),
-        ],
-      ),
-    ]),
+    FlyInOutTrigger,
   ],
 })
 export class AppComponent implements OnInit {
 
   public name: string = 'Dominion Learning';
-
-  protected chart: any = {
-    view: [] = [700, 400],
-
-    // options
-    showXAxis: true,
-    showYAxis: true,
-    gradient: false,
-    showLegend: true,
-    showXAxisLabel: true,
-    xAxisLabel: 'Rounds',
-    showYAxisLabel: true,
-    yAxisLabel: 'Rounds',
-
-    colorScheme: {
-      domain: ['#5AA454', '#A10A28', '#C7B42C', '#AAAAAA'],
-    },
-
-    // line, area
-    autoScale: true,
-  };
 
   protected turnStates = TurnState;
   protected turnState: TurnState = TurnState.Action;
@@ -100,11 +54,19 @@ export class AppComponent implements OnInit {
   protected startGameAnimationIsFinished: boolean = false;
   protected menuItems: Array<MenuItem> = new Array<MenuItem>();
   protected displayStatistics: boolean = false;
+  protected showDetailedCardOverlay: boolean = false;
+  protected detailedCardName: string = '';
+
+  // Card piles as element refs - we need these to be able to make the cards move
+  // @ViewChild('')
+
+  @ViewChild('detailedCardOverlay') protected detailedCardOverlayPanel: OverlayPanel;
 
   constructor(
     protected messageService: MessageService,
     protected confirmationService: ConfirmationService,
     protected gameService: GameService,
+    protected cardStateService: CardStateService,
   ) { }
 
   /**
@@ -123,6 +85,16 @@ export class AppComponent implements OnInit {
       }
     });
 
+    // Listen for card hover effects
+    this.cardStateService.hoveredCard$.subscribe((card: string) => {
+      if (card === undefined) {
+        this.detailedCardOverlayPanel.hide();
+      } else {
+        this.detailedCardName = card;
+        this.detailedCardOverlayPanel.show({});
+      }
+    });
+
     // Menu items
     this.menuItems = [
       {
@@ -138,15 +110,22 @@ export class AppComponent implements OnInit {
     ];
   }
 
+  /**
+   * Button handler for statistics menu button.
+   *
+   * @protected
+   * @param {Event} e
+   * @memberof AppComponent
+   */
   protected menuItemStatisticsPressed(e: Event): void {
-    console.log('menuItemStatisticsPressed');
     this.displayStatistics = true;
   }
 
-  protected startGameAnimationFinished(e: Event): void {
-    console.log('startGameAnimationFinished');
-    this.startGameAnimationIsFinished = true;
-  }
+  // protected startGameAnimationFinished(e: Event): void {
+  //   console.log('startGameAnimationFinished bef', this.startGameAnimationIsFinished, e);
+  //   this.startGameAnimationIsFinished = true;
+  //   console.log('startGameAnimationFinished aft', this.startGameAnimationIsFinished, e);
+  // }
 
   /**
    * Check if the game is started. Is false until animations have played out as well.
@@ -193,7 +172,7 @@ export class AppComponent implements OnInit {
    * @memberof AppComponent
    */
   protected resetSelections(): void {
-    // this.startGameAnimationIsFinished = false;
+    this.startGameAnimationIsFinished = false;
     this.selectedCardInHand = undefined;
     this.selectedSupplyPile = undefined;
     this.selectedPlayerCount = '2';
@@ -398,6 +377,6 @@ export class AppComponent implements OnInit {
   }
 
   protected animateCardMovement(fromElement: ElementRef, toElement: ElementRef, card: DominionCardDTO): void {
-    
+    // TODO
   }
 }

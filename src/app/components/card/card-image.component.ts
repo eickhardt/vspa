@@ -1,4 +1,5 @@
 import { Input, Component } from '@angular/core';
+import { CardStateService } from 'app/services/cardStateService/cardStateService';
 
 /**
  * Represents a card image in html.
@@ -18,4 +19,10 @@ export class CardImageComponent {
   @Input() public disabled: boolean = false;
   @Input() public selected: boolean = false;
   @Input() public deselected: boolean = false;
+  @Input() public detailed: boolean = false;
+  @Input() public grow: boolean = true;
+
+  constructor(
+    protected cardStateService: CardStateService,
+  ) {}
 }

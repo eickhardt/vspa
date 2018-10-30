@@ -2,6 +2,7 @@
 <div class="p-grid">
   <div class="p-col-12">
     <p-menubar [model]="menuItems">
+      {{ startGameAnimationIsFinished }}
       <ul *ngIf="gameState" class="ui-menubar-root-list">
         <li class="ui-menuitem">
           <a class="ui-menuitem-link">
@@ -42,137 +43,147 @@
 <br>
 <!-- eo Menu -->
 
-<!-- Game settings - Pick player count and cards to play with -->
-<div class="p-grid" *ngIf="gameState">
-  <p-fieldset *ngIf="isActionAvailable('startGame')" @startGameTrigger (@startGameTrigger.done)="startGameAnimationFinished()" legend="Game settings" [toggleable]="true" class="p-col-12 play-area">
-    <span *ngFor="let playerCountOption of playerCountOptions">
-      <p-radioButton name="playerCount" value="{{ playerCountOption }}" [label]="playerCountOption + ' Players'"
-        [(ngModel)]="selectedPlayerCount"></p-radioButton>
-      <br>
-    </span>
-    <br>
-    <card-image *ngFor="let card of gameState.possibleActions[0].options" (click)="gameCardSelected(card)" [cardName]="card"
-      [tooltip]="card" [deselected]="excludedCards.indexOf(card) > -1" [selected]="includedCards.indexOf(card) > -1"></card-image>
-    <br><br>
-    Included: <b>{{ includedCards.length }}</b><br>
-    Excluded: <b>{{ excludedCards.length }}</b><br>
-    <br>
-    <p-button icon="pi pi-check" label="Start game" (onClick)="startGameButtonPressed($event)" [styleClass]="'ui-button-raised ui-button-success'"></p-button>
-    <br><br>
-  </p-fieldset>
-</div>
-<!-- eo Game settings - Pick player count and cards to play with -->
+<div id="main-game-area">
 
-<div *ngIf="gameIsStarted" @flyInOutTrigger>
-  <div class="p-grid">
-    
-    <!-- Cards available for purchase -->
-    <p-fieldset *ngIf="gameState && gameState.gameMeta.supplyPiles.length"
-    legend="Cards available for purchase"
-    [toggleable]="true"
-    id="supply-area"
-    class="p-col-6 play-area"
-    [ngClass]="{'buy-area': turnState === turnStates.Buy}">
-      <div class="p-grid">
-        <div class="p-col-6">
-          <span *ngFor="let supplyPile of victorySupplies">
-            <supply-pile [pile]="supplyPile"
-              [selected]="supplyPile === selectedSupplyPile"
-              [currentPlayer]="currentPlayer"
-              (click)="supplyPileSelected(supplyPile)">
-            </supply-pile>
-          </span>
-        </div>
-        <div class="p-col-6">
-          <span *ngFor="let supplyPile of treasureSupplies">
-            <supply-pile [pile]="supplyPile" 
-              [selected]="supplyPile === selectedSupplyPile"
-              [currentPlayer]="currentPlayer"
-              (click)="supplyPileSelected(supplyPile)">
-            </supply-pile>
-          </span>
-        </div>
-        <div class="p-col-12">
-          <span *ngFor="let supplyPile of gameSupplies">
-            <supply-pile [pile]="supplyPile"
-              [selected]="supplyPile === selectedSupplyPile"
-              [currentPlayer]="currentPlayer"
-              (click)="supplyPileSelected(supplyPile)">
-            </supply-pile>
-          </span>
-        </div>
-      </div>
-    </p-fieldset>
-    <!-- eo Cards available for purchase -->
-
-    <!-- Cards played -->
-    <p-fieldset *ngIf="currentPlayer" legend="Cards played this turn: {{ currentPlayer.played.length }}" [toggleable]="true" class="p-col-6 play-area">
+  <!-- Game settings - Pick player count and cards to play with -->
+  <div *ngIf="!currentPlayer" @flyInOutTrigger id="pre-game" class="game-area-state">
+    <p-fieldset *ngIf="isActionAvailable('startGame')"
+      legend="Game settings"
+      [toggleable]="true"
+      class="play-area">
+      <span *ngFor="let playerCountOption of playerCountOptions">
+        <p-radioButton name="playerCount" value="{{ playerCountOption }}" [label]="playerCountOption + ' Players'"
+          [(ngModel)]="selectedPlayerCount"></p-radioButton>
+        <br>
+      </span>
       <br>
-      <card-image *ngFor="let card of currentPlayer.played" [cardName]="card.name"></card-image>
-    </p-fieldset>
-    <!-- eo Cards played -->
-    
-    <!-- Current player hand and deck -->
-    <p-fieldset *ngIf="currentPlayer" id="player-area" legend="{{ currentPlayer.name }}" [toggleable]="true" [ngClass]="{'action-area': turnState === turnStates.Action}" class="p-col-6 play-area">
-      <p-button *ngIf="turnState !== turnStates.Action"
-      icon="pi pi-caret-right"
-      label="Switch to action mode"
-      (onClick)="turnState = turnStates.Action"
-      [styleClass]="'ui-button-raised turn-mode-button'">
-      </p-button>
-      <p-button *ngIf="turnState !== turnStates.Buy"
-      icon="pi pi-dollar"
-      label="Switch to buy mode"
-      (onClick)="turnState = turnStates.Buy"
-      [styleClass]="'ui-button-raised ui-button-warning turn-mode-button'">
-      </p-button>
-      Gold in hand: <b>{{ currentPlayer.money }}</b> | 
-      Gold total: <b>{{ currentPlayer.moneyAvailable }}</b> |
-      <i class="pi pi-dollar"></i>Buys: <b>{{ currentPlayer.buys }}</b> |
-      <i class="pi pi-caret-right"></i>Actions: <b>{{ currentPlayer.actions }}</b>
+      <card-image *ngFor="let card of gameState.possibleActions[0].options" (click)="gameCardSelected(card)" [cardName]="card"
+        [tooltip]="card" [deselected]="excludedCards.indexOf(card) > -1" [selected]="includedCards.indexOf(card) > -1"></card-image>
       <br><br>
-
-      <div class="p-grid">
-        <div class="p-col-6">
-          <card-image *ngFor="let card of currentPlayer.hand"
-            [tooltip]="card.name"
-            [cardName]="card.name"
-            [selected]="selectedCardInHand === card"
-            (click)="cardSelectedInHand(card)">
-          </card-image>
-        </div>
-        <div class="p-col-2">
-          <card-image [cardName]="'backside'"
-            [countNumber]="currentPlayer.deck.length ? currentPlayer.deck.length : '0'"
-            [tooltip]="'Deck'">
-          </card-image>
-        </div>
-        <div class="p-col-4">
-          <card-image [cardName]="currentPlayer.discard.length ? currentPlayer.discard[currentPlayer.discard.length - 1].name : 'backside'"
-            [countNumber]="currentPlayer.discard.length ? '' : '0'"
-            [tooltip]="'Discard pile'">
-          </card-image>
-        </div>
-      </div>
-      <p-button id="end-turn-button"
-      icon="pi pi-check"
-      label="End turn"
-      (onClick)="endTurnButtonPressed($event)"
-      [styleClass]="'ui-button-raised ui-button-success'">
-      </p-button>
+      Included: <b>{{ includedCards.length }}</b><br>
+      Excluded: <b>{{ excludedCards.length }}</b><br>
+      <br>
+      <p-button icon="pi pi-check" label="Start game" (onClick)="startGameButtonPressed($event)" [styleClass]="'ui-button-raised ui-button-success'"></p-button>
+      <br><br>
     </p-fieldset>
-    <!-- eo Current player hand and deck -->
+  </div>
+  <!-- eo Game settings - Pick player count and cards to play with -->
+  
+  <div id="in-game" class="game-area-state" *ngIf="currentPlayer" @flyInOutTrigger>
+    <div class="p-grid">
+      <p-overlayPanel #detailedCardOverlay id="detailed-card-overlay">
+        <card-image [cardName]="detailedCardName" [detailed]="true" [grow]="false"></card-image>
+      </p-overlayPanel>
+      
+      <!-- Cards available for purchase -->
+      <p-fieldset *ngIf="gameState && gameState.gameMeta.supplyPiles.length"
+      legend="Cards available for purchase"
+      [toggleable]="true"
+      id="supply-area"
+      class="p-col-6 play-area"
+      [ngClass]="{'buy-area': turnState === turnStates.Buy}">
+        <div class="p-grid">
+          <div class="p-col-6">
+            <span *ngFor="let supplyPile of victorySupplies">
+              <supply-pile [pile]="supplyPile"
+                [selected]="supplyPile === selectedSupplyPile"
+                [currentPlayer]="currentPlayer"
+                (click)="supplyPileSelected(supplyPile)">
+              </supply-pile>
+            </span>
+          </div>
+          <div class="p-col-6">
+            <span *ngFor="let supplyPile of treasureSupplies">
+              <supply-pile [pile]="supplyPile" 
+                [selected]="supplyPile === selectedSupplyPile"
+                [currentPlayer]="currentPlayer"
+                (click)="supplyPileSelected(supplyPile)">
+              </supply-pile>
+            </span>
+          </div>
+          <div class="p-col-12">
+            <span *ngFor="let supplyPile of gameSupplies">
+              <supply-pile [pile]="supplyPile"
+                [selected]="supplyPile === selectedSupplyPile"
+                [currentPlayer]="currentPlayer"
+                (click)="supplyPileSelected(supplyPile)">
+              </supply-pile>
+            </span>
+          </div>
+        </div>
+      </p-fieldset>
+      <!-- eo Cards available for purchase -->
+  
+      <!-- Cards played -->
+      <p-fieldset *ngIf="currentPlayer" legend="Cards played this turn: {{ currentPlayer.played.length }}" [toggleable]="true" class="p-col-6 play-area">
+        <br>
+        <card-image *ngFor="let card of currentPlayer.played" [cardName]="card.name"></card-image>
+      </p-fieldset>
+      <!-- eo Cards played -->
+      
+      <!-- Current player hand and deck -->
+      <p-fieldset *ngIf="currentPlayer" id="player-area" legend="{{ currentPlayer.name }}" [toggleable]="true" [ngClass]="{'action-area': turnState === turnStates.Action}" class="p-col-6 play-area">
+        <p-button *ngIf="turnState !== turnStates.Action"
+        icon="pi pi-caret-right"
+        label="Switch to action mode"
+        (onClick)="turnState = turnStates.Action"
+        [styleClass]="'ui-button-raised turn-mode-button'">
+        </p-button>
+        <p-button *ngIf="turnState !== turnStates.Buy"
+        icon="pi pi-dollar"
+        label="Switch to buy mode"
+        (onClick)="turnState = turnStates.Buy"
+        [styleClass]="'ui-button-raised ui-button-warning turn-mode-button'">
+        </p-button>
+        Gold in hand: <b>{{ currentPlayer.money }}</b> | 
+        Gold total: <b>{{ currentPlayer.moneyAvailable }}</b> |
+        <i class="pi pi-dollar"></i>Buys: <b>{{ currentPlayer.buys }}</b> |
+        <i class="pi pi-caret-right"></i>Actions: <b>{{ currentPlayer.actions }}</b>
+        <br><br>
+  
+        <div class="p-grid">
+          <div class="p-col-6">
+            <card-image *ngFor="let card of currentPlayer.hand"
+              [tooltip]="card.name"
+              [cardName]="card.name"
+              [selected]="selectedCardInHand === card"
+              (click)="cardSelectedInHand(card)">
+            </card-image>
+          </div>
+          <div class="p-col-2">
+            <card-image [cardName]="'backside'"
+              [countNumber]="currentPlayer.deck.length ? currentPlayer.deck.length : '0'"
+              [tooltip]="'Deck'">
+            </card-image>
+          </div>
+          <div class="p-col-4">
+            <card-image [cardName]="currentPlayer.discard.length ? currentPlayer.discard[currentPlayer.discard.length - 1].name : 'backside'"
+              [countNumber]="currentPlayer.discard.length ? '' : '0'"
+              [tooltip]="'Discard pile'">
+            </card-image>
+          </div>
+        </div>
+        <p-button id="end-turn-button"
+        icon="pi pi-check"
+        label="End turn"
+        (onClick)="endTurnButtonPressed($event)"
+        [styleClass]="'ui-button-raised ui-button-success'">
+        </p-button>
+      </p-fieldset>
+      <!-- eo Current player hand and deck -->
+    </div>
   </div>
 </div>
 
 <p-dialog header="Statistics" [(visible)]="displayStatistics" class>
   <div class="p-grid" *ngIf="gameState && gameState.graphs.length">
     <div *ngFor="let graph of gameState.graphs" class="statistics-container" class="p-col-6">
-      <ngx-charts-line-chart [view]="chart.view" [scheme]="chart.colorScheme" [results]="graph.graphEntries" [gradient]="chart.gradient"
+      <chart-component [data]="graph"></chart-component>
+      <!-- <ngx-charts-line-chart [view]="chart.view" [scheme]="chart.colorScheme" [results]="graph.graphEntries" [gradient]="chart.gradient"
       [xAxis]="chart.showXAxis" [yAxis]="chart.showYAxis" [legend]="chart.showLegend" [showXAxisLabel]="chart.showXAxisLabel"
       [showYAxisLabel]="chart.showYAxisLabel" [xAxisLabel]="chart.xAxisLabel" [yAxisLabel]="graph.name" [autoScale]="chart.autoScale"
       (select)="onSelect($event)">
-      </ngx-charts-line-chart>
+      </ngx-charts-line-chart> -->
     </div>
   </div>
   <div class="p-grid" *ngIf="!gameState || !gameState.graphs.length">

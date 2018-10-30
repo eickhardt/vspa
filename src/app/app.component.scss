@@ -24,6 +24,20 @@ a.active {
   }
 }
 
+#main-game-area {
+  position: relative;
+  .game-area-state {
+    #detailed-card-overlay {
+      right: 400px;
+      position: absolute;
+    }
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+  }
+}
+
 #player-area.action-area .ui-fieldset {
   background: #007ddd;
 }
