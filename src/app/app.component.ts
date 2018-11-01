@@ -17,6 +17,7 @@ import { CardCategory } from './models/enums/cardCategory';
 import { FlyInOutTrigger } from './animations/flyInOutTrigger';
 import { CardStateService } from './services/cardStateService/cardStateService';
 import { OverlayPanel } from 'primeng/overlaypanel';
+import { IllusoryCardComponent } from './components/illusoryCard/illusory-card.component';
 
 export const ROOT_SELECTOR = 'app';
 
@@ -57,10 +58,8 @@ export class AppComponent implements OnInit {
   protected showDetailedCardOverlay: boolean = false;
   protected detailedCardName: string = '';
 
-  // Card piles as element refs - we need these to be able to make the cards move
-  // @ViewChild('')
-
   @ViewChild('detailedCardOverlay') protected detailedCardOverlayPanel: OverlayPanel;
+  @ViewChild('mainGameArea') protected mainGameArea: ElementRef;
 
   constructor(
     protected messageService: MessageService,
@@ -91,7 +90,7 @@ export class AppComponent implements OnInit {
         this.detailedCardOverlayPanel.hide();
       } else {
         this.detailedCardName = card;
-        this.detailedCardOverlayPanel.show({});
+        this.detailedCardOverlayPanel.show({}, this.mainGameArea.nativeElement);
       }
     });
 
@@ -101,12 +100,12 @@ export class AppComponent implements OnInit {
         label: 'New game',
         icon: 'pi pi-fw pi-star',
         command: (event?: any) => this.newGameButtonPressed(event),
-      },
+      } as MenuItem,
       {
         label: 'Statistics',
         icon: 'pi pi-fw pi-chart-bar',
         command: (event?: any) => this.menuItemStatisticsPressed(event),
-      },
+      } as MenuItem,
     ];
   }
 
@@ -376,7 +375,19 @@ export class AppComponent implements OnInit {
     this.selectedCardInHand = card;
   }
 
-  protected animateCardMovement(fromElement: ElementRef, toElement: ElementRef, card: DominionCardDTO): void {
-    // TODO
+  protected animateCardMovement(fromCoordinates: Coordinates, toCoordinates: Coordinates, card: DominionCardDTO): void {
+    const illusoryCard: IllusoryCardComponent = this.createCardIllusionAtCoordinates(fromCoordinates, card);
+    illusoryCard.animateToCoordinates(toCoordinates);
+  }
+
+  protected createCardIllusionAtCoordinates(coordinates: Coordinates, card: DominionCardDTO): IllusoryCardComponent {
+    const illusoryCard: IllusoryCardComponent = this.createIllusoryCard(card);
+    illusoryCard.show();
+
+    return illusoryCard;
+  }
+
+  protected createIllusoryCard(card: DominionCardDTO): IllusoryCardComponent {
+    return new IllusoryCardComponent();
   }
 }

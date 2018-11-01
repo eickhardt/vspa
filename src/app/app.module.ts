@@ -33,6 +33,7 @@ import { NgxChartsModule } from '@swimlane/ngx-charts';
 import { CardImageComponent } from './components/card/card-image.component';
 import { SupplyPileComponent } from './components/supplyPile/supply-pile.component';
 import { ChartComponent } from './components/chart/chart.component';
+import { IllusoryCardComponent } from './components/illusoryCard/illusory-card.component';
 
 import { GameService } from './services/gameService/game.service';
 import { CardStateService } from './services/cardStateService/cardStateService';
@@ -68,6 +69,7 @@ const PRIMENG_MODULES = [
 const COMPONENTS = [
   CardImageComponent,
   SupplyPileComponent,
+  IllusoryCardComponent,
   ChartComponent,
 ];
 
